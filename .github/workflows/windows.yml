@@ -11,6 +11,11 @@ jobs:
         include:
           - host_system: windows-2022
             vcvars: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
+            qt_version: "6.5.0"
+            qt_arch: win64_msvc2019_64
+
+          - host_system: windows-2022
+            vcvars: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat
             qt_version: "6.3.0"
             qt_arch: win64_msvc2019_64
 
@@ -61,6 +66,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - host_system: windows-2022
+            qt_version: "6.5.0"
+            qt_arch: win64_msvc2019_64
+
           - host_system: windows-2022
             qt_version: "6.3.0"
             qt_arch: win64_msvc2019_64

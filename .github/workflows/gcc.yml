@@ -9,7 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - image: arbmind/qbs-gcc-qt:1.22.1-12-6.3.1
+          - image: arbmind/qbs-gcc-qt:1.24.1-12-6.5.0
+          - image: arbmind/qbs-gcc-qt:1.22.1-12-6.3.1
 
     runs-on: ubuntu-latest
     steps:

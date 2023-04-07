@@ -9,7 +9,7 @@ project(Verdigris
 
 enable_testing()
 
-find_package(Qt6 6.2 COMPONENTS Core Test REQUIRED)
+find_package(Qt6 "6.2...<6.6" COMPONENTS Core Test REQUIRED)
 
 add_subdirectory("src")
 add_subdirectory("tools")
