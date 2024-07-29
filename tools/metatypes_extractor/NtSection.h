@@ -13,12 +13,10 @@ bool extract_nt_section(BufferSpan image, BufferSpan nt_image, BufferSpan search
         const auto section_header = section_headers.seek(i * section_header_size);
         const auto section_header_name = section_header.truncate_to(8u);
         if (!section_header_name.is_content_equal(search_section_name)) continue;
-        const auto section_size = [&]() {
-            const auto virtual_size = section_header.seek(8).le_cast<uint32_t>();
-            if (0 != virtual_size) return virtual_size; // .obj files have not virtual size
-            const auto size_of_raw_data = section_header.seek(16).le_cast<uint32_t>();
-            return size_of_raw_data;
-        }();
+        const auto virtual_size = section_header.seek(8u).le_cast<uint32_t>();
+        if (0 != virtual_size) return virtual_size; // .obj files have not virtual size
+        const auto size_of_raw_data = section_header.seek(16).le_cast<uint32_t>();
+        const auto section_size = size_of_raw_data;
         const auto section_addr = section_header.seek(20).le_cast<uint32_t>();
         const auto section = image.seek(section_addr).truncate_to(section_size);
         if (section.count != section_size) return false; // overflow
