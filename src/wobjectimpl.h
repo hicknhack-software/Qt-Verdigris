@@ -603,6 +603,58 @@ struct FunctorCall<
             QtPrivate::ApplyReturnValue<R>(arg[0]);
     }
 };
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+template <typename, typename, typename, typename> struct FunctorCall;
+template <size_t... II, typename... SignalArgs, typename R, typename Function>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, Function> : QtPrivate::FunctorCallBase {
+  static void call(Function f, void **arg)
+  {
+    using namespace QtPrivate;
+    call_internal<R>(arg, [&] {
+      return f((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
+    });
+  }
+};
+template <size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...)> : QtPrivate::FunctorCallBase {
+  static void call(SlotRet (Obj::*f)(SlotArgs...), Obj *o, void **arg)
+  {
+    using namespace QtPrivate;
+    call_internal<R>(arg, [&] {
+      return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
+    });
+  }
+};
+template <size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...) const> : QtPrivate::FunctorCallBase {
+  static void call(SlotRet (Obj::*f)(SlotArgs...) const, Obj *o, void **arg)
+  {
+    using namespace QtPrivate;
+    call_internal<R>(arg, [&] {
+      return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
+    });
+  }
+};
+template <size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...) noexcept> : QtPrivate::FunctorCallBase {
+  static void call(SlotRet (Obj::*f)(SlotArgs...) noexcept, Obj *o, void **arg)
+  {
+    using namespace QtPrivate;
+    call_internal<R>(arg, [&]() noexcept {
+      return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
+    });
+  }
+};
+template <size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...) const noexcept> : QtPrivate::FunctorCallBase {
+  static void call(SlotRet (Obj::*f)(SlotArgs...) const noexcept, Obj *o, void **arg)
+  {
+    using namespace QtPrivate;
+    call_internal<R>(arg, [&]() noexcept {
+      return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
+    });
+  }
+};
 #endif
 
 template<size_t N, class TPP>
@@ -878,6 +930,8 @@ struct FriendHelper {
 /// `W_OBJECT_IMPL((MyTemplate2<A,B>), template<typename A, typename B>)`
 #define W_OBJECT_IMPL(...)                                                                                             \
     W_OBJECT_IMPL_COMMON(W_MACRO_EMPTY, __VA_ARGS__)                                                                   \
+    QT_WARNING_PUSH                                                                                                    \
+    Q_OBJECT_NO_OVERRIDE_WARNING                                                                                       \
     W_MACRO_TEMPLATE_STUFF(__VA_ARGS__)                                                                                \
     void W_MACRO_FIRST_REMOVEPAREN(__VA_ARGS__)::qt_static_metacall(                                                   \
         QObject* _o, QMetaObject::Call _c, int _id, void** _a) {                                                       \
@@ -894,7 +948,8 @@ struct FriendHelper {
     W_MACRO_TEMPLATE_STUFF(__VA_ARGS__)                                                                                \
     int W_MACRO_FIRST_REMOVEPAREN(__VA_ARGS__)::qt_metacall(QMetaObject::Call _c, int _id, void** _a) {                \
         return w_internal::FriendHelper::qt_metacall_impl<W_MACRO_FIRST_REMOVEPAREN(__VA_ARGS__)>(this, _c, _id, _a);  \
-    }
+    }                                                                                                                  \
+    QT_WARNING_POP
 
 /// \macro W_GADGET_IMPL(TYPE [, TEMPLATE_STUFF])
 /// Same as W_OBJECT_IMPL, but for a W_GADGET
@@ -916,6 +971,8 @@ struct FriendHelper {
 /// (Requires support for c++17 inline variables)
 #define W_OBJECT_IMPL_INLINE(...)                                                                                      \
     W_OBJECT_IMPL_COMMON(inline, __VA_ARGS__)                                                                          \
+    QT_WARNING_PUSH                                                                                                    \
+    Q_OBJECT_NO_OVERRIDE_WARNING                                                                                       \
     W_MACRO_TEMPLATE_STUFF(__VA_ARGS__)                                                                                \
     inline void W_MACRO_FIRST_REMOVEPAREN(__VA_ARGS__)::qt_static_metacall(                                            \
         QObject* _o, QMetaObject::Call _c, int _id, void** _a) {                                                       \
@@ -932,7 +989,8 @@ struct FriendHelper {
     W_MACRO_TEMPLATE_STUFF(__VA_ARGS__)                                                                                \
     inline int W_MACRO_FIRST_REMOVEPAREN(__VA_ARGS__)::qt_metacall(QMetaObject::Call _c, int _id, void** _a) {         \
         return w_internal::FriendHelper::qt_metacall_impl<W_MACRO_FIRST_REMOVEPAREN(__VA_ARGS__)>(this, _c, _id, _a);  \
-    }
+    }                                                                                                                  \
+    QT_WARNING_POP
 
 /// \macro W_GADGET_IMPL_INLINE(TYPE [, TEMPLATE_STUFF])
 /// Same as W_GADGET_IMPL, but to be used in a header
