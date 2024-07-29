@@ -352,10 +352,8 @@ struct QmlFriendHelper {
             return v;
         }
         else if constexpr (QMetaTypeId<T>::Defined || QMetaTypeId<T*>::Defined) {
-            auto b = QMetaType::fromType<T>().name();
-            auto e = b;
-            while (*e != 0) e++;
-            return StringView{b, e};
+            constexpr auto name = QtPrivate::typenameHelper<T>();
+            return StringView{name.data(), name.data() + name.size() - 1};
         }
         else {
             static_assert(W_TypeRegistery<T>::registered, "Please Register T with W_REGISTER_ARGTYPE");
