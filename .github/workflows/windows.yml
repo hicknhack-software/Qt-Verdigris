@@ -31,19 +31,12 @@ jobs:
 
     runs-on: "${{ matrix.host_system }}"
     steps:
-      - name: Cache Qt
-        id: cache-qt
-        uses: actions/cache@v1
-        with:
-          path: ../Qt
-          key: QtCache-${{ matrix.qt_version }}-${{ matrix.qt_arch }}
-
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v4
         with:
           version: "${{ matrix.qt_version }}"
           arch: "${{ matrix.qt_arch }}"
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          cache: true
 
       - name: Install Qbs
         run: choco install qbs
@@ -57,7 +50,7 @@ jobs:
           qbs config --list profiles
 
       - name: Git Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - run: >-
           qbs build
@@ -85,25 +78,18 @@ jobs:
 
     runs-on: "${{ matrix.host_system }}"
     steps:
-      - name: Cache Qt
-        id: cache-qt
-        uses: actions/cache@v1
-        with:
-          path: ../Qt
-          key: QtCache-${{ matrix.qt_version }}-${{ matrix.qt_arch }}
-
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v4
         with:
           version: "${{ matrix.qt_version }}"
           arch: "${{ matrix.qt_arch }}"
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          cache: true
 
       - name: Add msbuild to PATH
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Git Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - run: qmake -r
       - run: nmake

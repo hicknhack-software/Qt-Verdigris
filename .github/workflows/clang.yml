@@ -25,7 +25,7 @@ jobs:
           qmake --version
 
       - name: Git Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - run: qmake -r "CONFIG+=${{ matrix.std_cpp }}"
       - run: make -j
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Git Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build & Test
         run: >-
@@ -78,19 +78,12 @@ jobs:
     env:
       QMAKESPEC: linux-clang
     steps:
-      - name: Cache Qt
-        id: cache-qt
-        uses: actions/cache@v1
-        with:
-          path: ../Qt
-          key: QtCache-${{ matrix.qt_version }}-${{ matrix.qt_arch }}
-
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v4
         with:
           version: "${{ matrix.qt_version }}"
           arch: "${{ matrix.qt_arch }}"
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          cache: true
 
       - name: Setup Clang
         run: |
@@ -104,7 +97,7 @@ jobs:
           clang++ --version
 
       - name: Git Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - run: qmake -r "CONFIG+=${{ matrix.std_cpp }}"
       - run: make -j
