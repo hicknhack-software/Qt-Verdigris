@@ -9,6 +9,8 @@ Application {
     Depends { name: "Qt.test" }
 
     files: [
+        "forwarddeclared.cpp",
+        "forwarddeclared.h",
         "tst_qmetaobject6.cpp",
     ]
 }

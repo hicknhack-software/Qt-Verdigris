@@ -91,6 +91,9 @@ private slots:
     void connectNotify_connectSlotsByName(); W_SLOT(connectNotify_connectSlotsByName, W_Access::Private{});
     void connectDisconnectNotify_shadowing(); W_SLOT(connectDisconnectNotify_shadowing, W_Access::Private{});
     void connectReferenceToIncompleteTypes(); W_SLOT(connectReferenceToIncompleteTypes, W_Access::Private{});
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    void connectAutoQueuedIncomplete(); W_SLOT(connectAutoQueuedIncomplete, W_Access::Private{});
+#endif
     void emitInDefinedOrder(); W_SLOT(emitInDefinedOrder, W_Access::Private{});
     void customTypes(); W_SLOT(customTypes, W_Access::Private{});
     void streamCustomTypes(); W_SLOT(streamCustomTypes, W_Access::Private{});
@@ -960,6 +963,43 @@ void tst_QObject::connectReferenceToIncompleteTypes() {
     QVERIFY(connection);
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+struct Incomplete2;
+class QObjectWithIncomplete2 : public QObject {
+    W_OBJECT(QObjectWithIncomplete2)
+
+public:
+    QObjectWithIncomplete2(QObject *parent=nullptr) : QObject(parent) {}
+signals:
+    void signalWithIncomplete(Incomplete2 *ptr) W_SIGNAL(signalWithIncomplete, (Incomplete2*), ptr);
+public slots:
+    void slotWithIncomplete(Incomplete2 *) { calledSlot = true; } W_SLOT(slotWithIncomplete,(Incomplete2*));
+    void run() { Q_EMIT signalWithIncomplete(nullptr); } W_SLOT(run);
+public:
+    bool calledSlot = false;
+};
+
+void tst_QObject::connectAutoQueuedIncomplete()
+{
+    auto objectWithIncomplete1 = new QObjectWithIncomplete2();
+    auto objectWithIncomplete2 = new QObjectWithIncomplete2();
+    auto t = new QThread(this);
+    auto cleanup = qScopeGuard([&](){
+        t->quit();
+        QVERIFY(t->wait());
+        delete objectWithIncomplete1;
+        delete objectWithIncomplete2;
+    });
+
+    t->start();
+    objectWithIncomplete2->moveToThread(t);
+
+    connect(objectWithIncomplete2, &QObjectWithIncomplete2::signalWithIncomplete,
+            objectWithIncomplete1, &QObjectWithIncomplete2::slotWithIncomplete);
+    QMetaObject::invokeMethod(objectWithIncomplete2, "run", Qt::QueuedConnection);
+    QTRY_VERIFY(objectWithIncomplete1->calledSlot);
+}
+#endif
 
 static void connectDisconnectNotifyTestSlot() {}
 
@@ -1561,8 +1601,12 @@ void tst_QObject::customTypes()
         QCOMPARE(checker.received.value(), t1.value());
         checker.received = t0;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+        qRegisterMetaType<CustomType>();
+#else
         int idx = qRegisterMetaType<CustomType>("CustomType");
         QCOMPARE(QMetaType::type("CustomType"), idx);
+#endif
 
         checker.disconnect();
         connect(&checker, SIGNAL(signal1(CustomType)), &checker, SLOT(slot1(CustomType)),
@@ -1576,10 +1620,12 @@ void tst_QObject::customTypes()
         QCOMPARE(checker.received.value(), t2.value());
         QCOMPARE(instanceCount, 4);
 
+#if QT_VERSION < QT_VERSION_CHECK(6,5,0)
         QVERIFY(QMetaType::isRegistered(idx));
         QCOMPARE(qRegisterMetaType<CustomType>("CustomType"), idx);
         QCOMPARE(QMetaType::type("CustomType"), idx);
         QVERIFY(QMetaType::isRegistered(idx));
+#endif
     }
     QCOMPARE(instanceCount, 3);
 }
@@ -1588,13 +1634,23 @@ void tst_QObject::streamCustomTypes()
 {
     QByteArray ba;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    qRegisterMetaType<CustomType>();
+
+    QMetaType metaType = QMetaType::fromType<CustomType>();
+#else
     int idx = qRegisterMetaType<CustomType>("CustomType");
+#endif
 
     {
         CustomType t1(1, 2, 3);
         QCOMPARE(instanceCount, 1);
         QDataStream stream(&ba, (QIODevice::OpenMode)QIODevice::WriteOnly);
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+        metaType.save(stream, &t1);
+#else
         QMetaType::save(stream, idx, &t1);
+#endif
     }
 
     QCOMPARE(instanceCount, 0);
@@ -1603,7 +1659,11 @@ void tst_QObject::streamCustomTypes()
         CustomType t2;
         QCOMPARE(instanceCount, 1);
         QDataStream stream(&ba, (QIODevice::OpenMode)QIODevice::ReadOnly);
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+        metaType.load(stream, &t2);
+#else
         QMetaType::load(stream, idx, &t2);
+#endif
         QCOMPARE(instanceCount, 1);
         QCOMPARE(t2.i1, 1);
         QCOMPARE(t2.i2, 2);
@@ -2045,7 +2105,11 @@ void tst_QObject::property()
 
     const int idx = mo->indexOfProperty("variant");
     QVERIFY(idx != -1);
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCOMPARE(mo->property(idx).userType(), QMetaType::QVariant);
+#else
     QCOMPARE(QMetaType::Type(mo->property(idx).type()), QMetaType::QVariant);
+#endif
     QCOMPARE(object.property("variant"), QVariant());
     QVariant variant1(42);
     QVariant variant2("string");
@@ -2064,7 +2128,11 @@ void tst_QObject::property()
     QVERIFY(!property.isEnumType());
     QCOMPARE(property.typeName(), "CustomType*");
     qRegisterMetaType<CustomType*>();
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCOMPARE_GE(property.typeId(), QMetaType::User);
+#else
     QCOMPARE(property.type(), QVariant::UserType);
+#endif
     QCOMPARE(property.userType(), qMetaTypeId<CustomType*>());
 
     CustomType *customPointer = nullptr;
@@ -2079,7 +2147,11 @@ void tst_QObject::property()
     property = mo->property(mo->indexOfProperty("custom"));
     QVERIFY(property.isWritable());
     QCOMPARE(property.typeName(), "CustomType*");
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCOMPARE_GE(property.typeId(), QMetaType::User);
+#else
     QCOMPARE(property.type(), QVariant::UserType);
+#endif
     QCOMPARE(property.userType(), qMetaTypeId<CustomType*>());
 
     QVERIFY(object.setProperty("custom", customVariant));
@@ -2113,7 +2185,11 @@ void tst_QObject::property()
     QCOMPARE(object.property("priority").toInt(), 0);
 
     // now it's registered, so it works as expected
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    int priorityMetaTypeId = qRegisterMetaType<PropertyObject::Priority>();
+#else
     int priorityMetaTypeId = qRegisterMetaType<PropertyObject::Priority>("PropertyObject::Priority");
+#endif
 
     QVERIFY(mo->indexOfProperty("priority") != -1);
     property = mo->property(mo->indexOfProperty("priority"));
@@ -2123,7 +2199,11 @@ void tst_QObject::property()
 #else
     QCOMPARE(property.typeName(), "PropertyObject::Priority");
 #endif
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCOMPARE_GE(property.typeId(), QMetaType::User);
+#else
     QCOMPARE(property.type(), QVariant::UserType);
+#endif
     QCOMPARE(property.userType(), priorityMetaTypeId);
 
     var = object.property("priority");
@@ -2146,7 +2226,11 @@ void tst_QObject::property()
     object.setProperty("priority", var);
     QCOMPARE(qvariant_cast<PropertyObject::Priority>(object.property("priority")), PropertyObject::High);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    qRegisterMetaType<CustomString>();
+#else
     qRegisterMetaType<CustomString>("CustomString");
+#endif
     QVERIFY(mo->indexOfProperty("customString") != -1);
     QCOMPARE(object.property("customString").toString(), QString());
     object.setCustomString("String1");
@@ -3055,7 +3139,11 @@ void tst_QObject::floatProperty()
     QVERIFY(idx > 0);
     QMetaProperty prop = obj.metaObject()->property(idx);
     QVERIFY(prop.isValid());
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCOMPARE(prop.typeId(), QMetaType::fromType<float>().id());
+#else
     QCOMPARE(int(prop.type()), QMetaType::type("float"));
+#endif
     QVERIFY(!prop.write(&obj, QVariant("Hello")));
     QVERIFY(prop.write(&obj, QVariant::fromValue(128.0f)));
     QVariant v = prop.read(&obj);
@@ -3070,7 +3158,11 @@ void tst_QObject::qrealProperty()
     QVERIFY(idx > 0);
     QMetaProperty prop = obj.metaObject()->property(idx);
     QVERIFY(prop.isValid());
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCOMPARE(prop.typeId(), QMetaType::fromType<qreal>().id());
+#else
     QCOMPARE(int(prop.type()), QMetaType::type("qreal"));
+#endif
     QVERIFY(!prop.write(&obj, QVariant("Hello")));
 
     QVERIFY(prop.write(&obj, QVariant::fromValue(128.0f)));
@@ -3121,7 +3213,11 @@ void tst_QObject::dynamicProperties()
     QVERIFY(!obj.setProperty("myuserproperty", "Hello"));
     QCOMPARE(obj.changedDynamicProperties.count(), 1);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCOMPARE(obj.property("myuserproperty").typeId(), QMetaType::QString);
+#else
     QCOMPARE(obj.property("myuserproperty").type(), QVariant::String);
+#endif
     QCOMPARE(obj.property("myuserproperty").toString(), QString("Hello"));
 
     QCOMPARE(obj.dynamicPropertyNames().count(), 1);
@@ -3132,7 +3228,11 @@ void tst_QObject::dynamicProperties()
     QVERIFY(!obj.setProperty("myuserproperty", QByteArray("Hello")));
     QCOMPARE(obj.changedDynamicProperties.count(), 1);
     QCOMPARE(obj.changedDynamicProperties.first(), QByteArray("myuserproperty"));
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+    QCOMPARE(obj.property("myuserproperty").typeId(), QMetaType::QByteArray);
+#else
     QCOMPARE(obj.property("myuserproperty").type(), QVariant::ByteArray);
+#endif
     QCOMPARE(obj.property("myuserproperty").toString(), QByteArray("Hello"));
 
     // unset the property
@@ -4891,8 +4991,12 @@ void tst_QObject::customTypesPointer()
 
         checker.disconnect();
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        qRegisterMetaType<CustomType>();
+#else
         int idx = qRegisterMetaType<CustomType>("CustomType");
         QCOMPARE(QMetaType::type("CustomType"), idx);
+#endif
 
         connect(&checker, &QCustomTypeChecker::signal1, &checker, &QCustomTypeChecker::slot1,
                 Qt::QueuedConnection);
@@ -4905,10 +5009,12 @@ void tst_QObject::customTypesPointer()
         QCOMPARE(checker.received.value(), t2.value());
         QCOMPARE(instanceCount, 4);
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
         QVERIFY(QMetaType::isRegistered(idx));
         QCOMPARE(qRegisterMetaType<CustomType>("CustomType"), idx);
         QCOMPARE(QMetaType::type("CustomType"), idx);
         QVERIFY(QMetaType::isRegistered(idx));
+#endif
 
         // Test auto registered type  (QList<CustomType>)
         QList<CustomType> list;
@@ -8536,6 +8642,9 @@ W_OBJECT_IMPL(ReceiverObject)
 W_OBJECT_IMPL(AutoConnectSender)
 W_OBJECT_IMPL(AutoConnectReceiver)
 W_OBJECT_IMPL(QObjectWithIncomplete)
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+W_OBJECT_IMPL(QObjectWithIncomplete2)
+#endif
 W_OBJECT_IMPL(ConnectByNameNotifySenderObject)
 W_OBJECT_IMPL(ConnectByNameNotifyReceiverObject)
 W_OBJECT_IMPL(ConnectDisconnectNotifyShadowObject)

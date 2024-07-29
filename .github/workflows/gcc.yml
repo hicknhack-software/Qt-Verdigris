@@ -9,12 +9,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - image: arbmind/qbs-gcc-qt:1.22.1-12-6.3.1
+          - image: arbmind/qbs-gcc-qt:2.3.1-14-6.7.1
+          - image: arbmind/qbs-gcc-qt:1.24.1-12-6.5.0
+          - image: arbmind/qbs-gcc-qt:1.22.1-12-6.3.1
 
     runs-on: ubuntu-latest
     steps:
       - name: Git Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build & Test
         run: >-
@@ -48,19 +50,12 @@ jobs:
 
     runs-on: "${{ matrix.host_system }}"
     steps:
-      - name: Cache Qt
-        id: cache-qt
-        uses: actions/cache@v1
-        with:
-          path: ../Qt
-          key: QtCache-${{ matrix.qt_version }}-${{ matrix.qt_arch }}
-
       - name: Install Qt
-        uses: jurplel/install-qt-action@v2
+        uses: jurplel/install-qt-action@v4
         with:
           version: "${{ matrix.qt_version }}"
           arch: "${{ matrix.qt_arch }}"
-          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          cache: true
 
       - name: Setup Gcc
         run: |
@@ -73,7 +68,7 @@ jobs:
           g++ --version
 
       - name: Git Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - run: qmake -r "CONFIG+=${{ matrix.std_cpp }}"
       - run: make -j
