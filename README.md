@@ -8,16 +8,19 @@ Blog post presenting the project: https://woboq.com/blog/verdigris-qt-without-mo
 
 Blog post with some implementation details: https://woboq.com/blog/verdigris-implementation-tricks.html (2018)
 
-Browse code online: https://code.woboq.org/woboq/verdigris
-
-Github Actions: [![Clang Tests](https://github.com/woboq/verdigris/actions/workflows/clang.yml/badge.svg?branch=master)](https://github.com/woboq/verdigris/actions/workflows/clang.yml) [![Gcc Tests](https://github.com/woboq/verdigris/actions/workflows/gcc.yml/badge.svg?branch=master)](https://github.com/woboq/verdigris/actions/workflows/gcc.yml) [![Windows Tests](https://github.com/woboq/verdigris/actions/workflows/windows.yml/badge.svg?branch=master)](https://github.com/woboq/verdigris/actions/workflows/windows.yml)
-Appveyor:
-[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/povubj5thvlsu6sy/branch/master?svg=true)](https://ci.appveyor.com/project/ogoffart/verdigris)
+Github Actions:
+[![Clang Tests](https://github.com/hicknhack-software/Qt-Verdigris/actions/workflows/clang.yml/badge.svg)](https://github.com/hicknhack-software/Qt-Verdigris/actions/workflows/clang.yml)
+[![Gcc Tests](https://github.com/hicknhack-software/Qt-Verdigris/actions/workflows/gcc.yml/badge.svg)](https://github.com/hicknhack-software/Qt-Verdigris/actions/workflows/gcc.yml)
+[![Windows Tests](https://github.com/hicknhack-software/Qt-Verdigris/actions/workflows/windows.yml/badge.svg)](https://github.com/hicknhack-software/Qt-Verdigris/actions/workflows/windows.yml)
 
 ## Documentation
 
-For an introduction, see the [tutorial.cpp](https://code.woboq.org/woboq/verdigris/tutorial/tutorial.cpp.html).
+For an introduction, see the [feature/main.cpp](https://github.com/hicknhack-software/Qt-Verdigris/blob/develop/tutorial/features/main.cpp).
 See also a more detailed documetation of the macros in the source code.
+
+For the advanced generic C++ API see the [app_api/main.cpp](https://github.com/hicknhack-software/Qt-Verdigris/blob/develop/tutorial/cpp_api/main.cpp)
+
+For the experimantal QML_ELEMENT support, see [qml_element](https://github.com/hicknhack-software/Qt-Verdigris/tree/develop/tutorial/qml_element) folder.
 
 ## Status
 
@@ -25,26 +28,33 @@ Almost all features of Qt are working. The Qt test have been ported.
 
 Features that are not yet working:
  - Q_PLUGIN_METADATA: This would require compiling to the Qt's binary json. Out of scope for now.
- - QML_ELEMENT: This is a Qt6 feature that automatically registers the QObjects for QML. Out of scope for now.
  - BINDABLE: Needs to be backported to the current C++ and Qt requirements.
  - QMetaMethod::tag(): Not yet implemented, could be supported if needed, but is not really needed
                        for anything. (not even tested by Qt's auto test)
  - Q_ENUM: Working, but requires to repeat the name of every enum value. Could be improved.
 
 **New features compared to Qt with moc:**
+ - Compile QObjects in single C++ compiler run.
  - Support for templated QObject.
  - Support for QObject nested in another class.
+ 
+Some Quirks:
+ - QML_ELEMENT: This is a Qt6 feature that automatically registers the QObjects for QML.
+   Works by storing JSON in extra data segment that is dropped during linking.
+   Only works on Posix, Mac or Windows targets.
+   Requires CMake or Patched (Obj support) Qbs to work.
+
 
 ## How to Use
 
 The library consist of only two headers files. You can either copy these header files in your
 project, or adjust the include paths so that the compiler finds them.
 You will find the headers in the 'src/' sub-directory.
-Also make sure to set your compiler in, at least, C++14 mode. With qmake, you can do that with
-`CONFIG += c++14`.
+Also make sure to set your compiler in, at least, C++20 mode. With qmake, you can do that with
+`CONFIG += c++20`.
 
-Tested with Qt >= 5.9.
-Need a compiler that can do C++14 relaxed constexpr such as GCC 5.1 or Clang 3.5, or MSVC 2017
+Tested with Qt >= 6.2.
+Need a compiler that can do C++20 properly, such as GCC 12+ or Clang 13+, or MSVC 2019+.
 
 ### Translations
 
@@ -68,19 +78,6 @@ This table show the correspondence between Qt macro and Verdigris macro:
 | `Q_DECLARE_INTERFACE(MyInterface, "my.interface")` ... `Q_INTERFACE(MyInterface)`     | `Q_DECLARE_INTERFACE(MyInterface, "my.interface")` ... `W_INTERFACE(MyInterface)` |
 | `Q_NAMESPACE`                                | `W_NAMESPACE(MyNs)` ...  `W_NAMESPACE_IMPL(MyNs)` |
 | Q_ENUM/Q_FLAG/Q_ENUM_NS/Q_FLAG_NS            | W_ENUM/W_FLAG/W_ENUM_NS/W_FLAG_NS                 |
-
-## Who uses Verdigris ?
-
-* [Ossia Score](https://ossia.io/), an interactive intermedia sequencer. ([github](https://github.com/OSSIA/score))
-  It uses Verdigris in productions. Verdigris allowed ossia score to use template with their QObject's, and solve some trouble with the build system.
-
-
-<img align="right" src="https://woboq.com/logos/isotronic.png">
-
-* [ISOTRONIC GmbH](https://isotronic.de/), a provider for visual inspection QA systems for automatic glass vial manufacturing, uses Verdigris in production:
-> The transition from standard Qt affected more than 100 source code files and was done in not much more than a day. The reason for the switch was to be able to use a build system that has no interface for Qt's MOC process. In the rare cases of questions or problems the Verdigris team was quick and competent in resolving the issues. After more than 6 months of real-world experience we are still very happy with that decision.
-
-* If you are using Verdigris and want to appear here, please open an issue, or a pull request
 
 ## Context
 
