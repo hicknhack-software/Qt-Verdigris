@@ -37,6 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+        - image: arbmind/qbs-clang-libstdcpp-qt:2.3.1-18-14-6.7.1
         - image: arbmind/qbs-clang-libstdcpp-qt:1.24.1-16-12-6.5.0
         - image: arbmind/qbs-clang-libstdcpp-qt:1.22.0-14-11-6.3.0
         - image: arbmind/qbs-clang-libstdcpp-qt:1.21.0-13-10-6.2.4

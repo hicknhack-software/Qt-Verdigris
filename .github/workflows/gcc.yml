@@ -9,6 +9,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - image: arbmind/qbs-gcc-qt:2.3.1-14-6.7.1
           - image: arbmind/qbs-gcc-qt:1.24.1-12-6.5.0
           - image: arbmind/qbs-gcc-qt:1.22.1-12-6.3.1
 
