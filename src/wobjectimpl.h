@@ -749,41 +749,25 @@ struct FriendHelper {
         case QMetaObject::ReadProperty:
             if constexpr (p.getter != nullptr) {
                 auto& t = *reinterpret_cast<Type*>(_a[0]);
-                if constexpr (requires { t = (_o->*p.getter)(); }) {
-                    t = (_o->*p.getter)();
-                }
-                else {
-                    throw "wrong getter!";
-                }
+                static_assert(requires { t = (_o->*p.getter)(); });
+                t = (_o->*p.getter)();
             }
             else if constexpr (p.member != nullptr) {
                 auto& t = *reinterpret_cast<Type*>(_a[0]);
-                if constexpr (requires { t = _o->*p.member; }) {
-                    t = _o->*p.member;
-                }
-                else {
-                    throw "wrong member!";
-                }
+                static_assert(requires { t = _o->*p.member; });
+                t = _o->*p.member;
             }
             break;
         case QMetaObject::WriteProperty:
             if constexpr (p.setter != nullptr) {
                 const auto& t = *reinterpret_cast<Type*>(_a[0]);
-                if constexpr (requires { (_o->*p.setter)(t); }) {
-                    (_o->*p.setter)(t);
-                }
-                else {
-                    throw "wrong setter!";
-                }
+                static_assert(requires { (_o->*p.setter)(t); });
+                (_o->*p.setter)(t);
             }
             else if constexpr (p.member != nullptr) {
                 const auto& t = *reinterpret_cast<Type*>(_a[0]);
-                if constexpr (requires { _o->*p.member = t; }) {
-                    _o->*p.member = t;
-                }
-                else {
-                    throw "wrong member!";
-                }
+                static_assert(requires { _o->*p.member = t; });
+                _o->*p.member = t;
                 if constexpr (p.notify != nullptr) {
                     if constexpr (requires { (_o->*p.notify)(_o->*p.member); }) {
                         (_o->*p.notify)(_o->*p.member);
@@ -792,30 +776,22 @@ struct FriendHelper {
                         (_o->*p.notify)();
                     }
                     else {
-                        throw "wrong notify!";
+                        static_assert(requires { (_o->*p.notify)(_o->*p.member); } || requires { (_o->*p.notify)(); });
                     }
                 }
             }
             break;
         case QMetaObject::ResetProperty:
             if constexpr (p.reset != nullptr) {
-                if constexpr (requires { (_o->*p.reset)(); }) {
-                    (_o->*p.reset)();
-                }
-                else {
-                    throw "wrong reset!";
-                }
+                static_assert(requires { (_o->*p.reset)(); });
+                (_o->*p.reset)();
             }
             break;
         case QMetaObject::BindableProperty:
             if constexpr (p.bindable != nullptr) {
                 auto& t = *static_cast<class QUntypedBindable*>(_a[0]);
-                if constexpr (requires { t = (_o->*p.bindable)(); }) {
-                    t = (_o->*p.bindable)();
-                }
-                else {
-                    throw "wrong bindable";
-                }
+                static_assert(requires { t = (_o->*p.bindable)(); });
+                t = (_o->*p.bindable)();
             }
             break;
         case QMetaObject::RegisterPropertyMetaType:
