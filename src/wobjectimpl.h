@@ -71,21 +71,19 @@ concept IsNotifySignal = (w_state(index<SigIdx>, SignalStateTag{}, OPP{}).getFun
 
 /// Helper to get information about the notify signal of the property within object T
 template<size_t L, size_t PropIdx, typename TPP, typename OPP> consteval int resolveNotifySignal() {
-    return []<size_t... Is>(const index_sequence<Is...>&)->int {
+    return []<size_t... Is>(const index_sequence<Is...>&) -> int {
         int r = -1;
         constexpr auto notify = w_state(index<PropIdx>, PropertyStateTag{}, TPP{}).notify;
         ((IsNotifySignal<OPP, Is, notify> ? r = (int)Is : 0), ...);
         return r;
-    }
-    (make_index_sequence<stateCount<L, SignalStateTag, OPP>()>{});
+    }(make_index_sequence<stateCount<L, SignalStateTag, OPP>()>{});
 }
 
 /// returns true if the object T has at least one property with a notify signal
 template<size_t L, typename TPP> consteval bool hasNotifySignal() {
-    return []<size_t... Is>(const index_sequence<Is...>&)->bool {
+    return []<size_t... Is>(const index_sequence<Is...>&) -> bool {
         return (false || ... || (w_state(index<Is>, PropertyStateTag{}, TPP{}).notify != nullptr));
-    }
-    (make_index_sequence<stateCount<L, PropertyStateTag, TPP>()>{});
+    }(make_index_sequence<stateCount<L, PropertyStateTag, TPP>()>{});
 }
 
 template<class State> struct ClassInfoGenerator {
@@ -102,7 +100,7 @@ template<class T, class State, size_t I>
 concept IsPublic = requires(T** tpp) { T::w_accessHelper(index<I>, State{}, tpp); };
 
 template<class T, class State, size_t I> struct Derived : T {
-    static constexpr bool w_accessOracle = requires(T * *tpp) { T::w_accessHelper(index<I>, State{}, tpp); };
+    static constexpr bool w_accessOracle = requires(T** tpp) { T::w_accessHelper(index<I>, State{}, tpp); };
 };
 template<class T, class State, size_t I>
 concept IsProtected = (!std::is_final_v<T> && Derived<T, State, I>::w_accessOracle);
@@ -312,23 +310,21 @@ template<class State> struct ConstructorParametersGenerator {
 /// Given method, a binary::tree containing information about methods or constructor,
 /// return the amount of item it will add in the int array.
 template<size_t L, class T> consteval int methodsParamOffset() {
-    return []<size_t... Is>(const index_sequence<Is...>&)->int {
+    return []<size_t... Is>(const index_sequence<Is...>&) -> int {
         return (
             0 + ... +
             int(1 +
                 QtPrivate::FunctionPointer<typename decltype(ObjectInfo<T, L>::method(
                         index<Is>))::Func>::ArgumentCount *
                     2));
-    }
-    (make_index_sequence<ObjectInfo<T, L>::methodCount>{});
+    }(make_index_sequence<ObjectInfo<T, L>::methodCount>{});
 }
 
 template<size_t L, class T> consteval int constructorParamOffset() {
     using TPP = T**;
-    return []<size_t... Is>(const index_sequence<Is...>&)->int {
+    return []<size_t... Is>(const index_sequence<Is...>&) -> int {
         return (0 + ... + int(1 + w_state(index<Is>, ConstructorStateTag{}, TPP{}).argCount * 2));
-    }
-    (make_index_sequence<ObjectInfo<T, L>::constructorCount>{});
+    }(make_index_sequence<ObjectInfo<T, L>::constructorCount>{});
 }
 
 template<class T, size_t N> using RawArray = T[N];
@@ -474,23 +470,25 @@ template<class T, class Result, class Builder> consteval auto generateDataPass()
 
     using TPP = T**;
     constexpr auto fold = []<class State>(State, auto&& f) {
-        [&f]<size_t... Is>(const index_sequence<Is...>&) { (f(w_state(index<Is>, State{}, TPP{})), ...); }
-        (make_index_sequence<stateCount<L, State, TPP>()>{});
+        [&f]<size_t... Is>(const index_sequence<Is...>&) {
+            (f(w_state(index<Is>, State{}, TPP{})), ...);
+        }(make_index_sequence<stateCount<L, State, TPP>()>{});
     };
     constexpr auto foldIndex = []<class State>(State, auto&& f) {
-        [&f]<size_t... Is>(const index_sequence<Is...>&) { (f(w_state(index<Is>, State{}, TPP{}), index<Is>), ...); }
-        (make_index_sequence<stateCount<L, State, TPP>()>{});
+        [&f]<size_t... Is>(const index_sequence<Is...>&) {
+            (f(w_state(index<Is>, State{}, TPP{}), index<Is>), ...);
+        }(make_index_sequence<stateCount<L, State, TPP>()>{});
     };
     constexpr auto foldMethod = [](auto&& f) {
-        [&f]<size_t... Is>(const index_sequence<Is...>&) { (f(ObjI::method(index<Is>)), ...); }
-        (make_index_sequence<ObjI::methodCount>{});
+        [&f]<size_t... Is>(const index_sequence<Is...>&) {
+            (f(ObjI::method(index<Is>)), ...);
+        }(make_index_sequence<ObjI::methodCount>{});
     };
     constexpr auto foldMethodIndex = [](auto&& f) {
         constexpr auto foldStateIndex = []<class State>(State, auto&& f) {
             [&f]<size_t... Is>(const index_sequence<Is...>&) {
                 (f(w_state(index<Is>, State{}, TPP{}), State{}, index<Is>), ...);
-            }
-            (make_index_sequence<stateCount<ObjI::counter, State, TPP>()>{});
+            }(make_index_sequence<stateCount<ObjI::counter, State, TPP>()>{});
         };
         foldStateIndex(SignalStateTag{}, f);
         foldStateIndex(SlotStateTag{}, f);
@@ -604,56 +602,59 @@ struct FunctorCall<
     }
 };
 #elif QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-template <typename, typename, typename, typename> struct FunctorCall;
-template <size_t... II, typename... SignalArgs, typename R, typename Function>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, Function> : QtPrivate::FunctorCallBase {
-  static void call(Function f, void **arg)
-  {
-    using namespace QtPrivate;
-    call_internal<R>(arg, [&] {
-      return f((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
-    });
-  }
+template<typename, typename, typename, typename> struct FunctorCall;
+template<size_t... II, typename... SignalArgs, typename R, typename Function>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, Function>
+    : QtPrivate::FunctorCallBase {
+    static void call(Function f, void** arg) {
+        using namespace QtPrivate;
+        call_internal<R>(
+            arg, [&] { return f((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type*>(arg[II + 1]))...); });
+    }
 };
-template <size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...)> : QtPrivate::FunctorCallBase {
-  static void call(SlotRet (Obj::*f)(SlotArgs...), Obj *o, void **arg)
-  {
-    using namespace QtPrivate;
-    call_internal<R>(arg, [&] {
-      return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
-    });
-  }
+template<size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...)>
+    : QtPrivate::FunctorCallBase {
+    static void call(SlotRet (Obj::*f)(SlotArgs...), Obj* o, void** arg) {
+        using namespace QtPrivate;
+        call_internal<R>(
+            arg, [&] { return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type*>(arg[II + 1]))...); });
+    }
 };
-template <size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...) const> : QtPrivate::FunctorCallBase {
-  static void call(SlotRet (Obj::*f)(SlotArgs...) const, Obj *o, void **arg)
-  {
-    using namespace QtPrivate;
-    call_internal<R>(arg, [&] {
-      return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
-    });
-  }
+template<size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...) const>
+    : QtPrivate::FunctorCallBase {
+    static void call(SlotRet (Obj::*f)(SlotArgs...) const, Obj* o, void** arg) {
+        using namespace QtPrivate;
+        call_internal<R>(
+            arg, [&] { return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type*>(arg[II + 1]))...); });
+    }
 };
-template <size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...) noexcept> : QtPrivate::FunctorCallBase {
-  static void call(SlotRet (Obj::*f)(SlotArgs...) noexcept, Obj *o, void **arg)
-  {
-    using namespace QtPrivate;
-    call_internal<R>(arg, [&]() noexcept {
-      return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
-    });
-  }
+template<size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<
+    std::index_sequence<II...>,
+    QtPrivate::List<SignalArgs...>,
+    R,
+    SlotRet (Obj::*)(SlotArgs...) noexcept> : QtPrivate::FunctorCallBase {
+    static void call(SlotRet (Obj::*f)(SlotArgs...) noexcept, Obj* o, void** arg) {
+        using namespace QtPrivate;
+        call_internal<R>(arg, [&]() noexcept {
+            return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type*>(arg[II + 1]))...);
+        });
+    }
 };
-template <size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, SlotRet (Obj::*)(SlotArgs...) const noexcept> : QtPrivate::FunctorCallBase {
-  static void call(SlotRet (Obj::*f)(SlotArgs...) const noexcept, Obj *o, void **arg)
-  {
-    using namespace QtPrivate;
-    call_internal<R>(arg, [&]() noexcept {
-      return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type *>(arg[II+1]))...);
-    });
-  }
+template<size_t... II, typename... SignalArgs, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<
+    std::index_sequence<II...>,
+    QtPrivate::List<SignalArgs...>,
+    R,
+    SlotRet (Obj::*)(SlotArgs...) const noexcept> : QtPrivate::FunctorCallBase {
+    static void call(SlotRet (Obj::*f)(SlotArgs...) const noexcept, Obj* o, void** arg) {
+        using namespace QtPrivate;
+        call_internal<R>(arg, [&]() noexcept {
+            return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type*>(arg[II + 1]))...);
+        });
+    }
 };
 #endif
 
@@ -851,7 +852,10 @@ struct FriendHelper {
             }
             else if (_c == QMetaObject::IndexOfMethod) {
                 if constexpr (std::is_same_v<QObject, O>) {
-                    (void)((isSignalMethod<ObjI, MethI>(reinterpret_cast<void**>(_a[1])) ? (*reinterpret_cast<int*>(_a[0]) = MethI, true) : false) || ...);
+                    (void)((isSignalMethod<ObjI, MethI>(reinterpret_cast<void**>(_a[1]))
+                                ? (*reinterpret_cast<int*>(_a[0]) = MethI, true)
+                                : false) ||
+                           ...);
                 }
                 else {
                     Q_ASSERT_X(false, "qt_static_metacall", "IndexOfMethod called on a Q_GADGET");
@@ -863,10 +867,9 @@ struct FriendHelper {
             else if (isPropertyMetacall(_c)) {
                 ((_id == PropI ? propertyOperation<T, PropI>(static_cast<T*>(_o), _c, _a) : (void)0), ...);
             }
-        }
-        (make_index_sequence<ObjI::methodCount>{},
-         make_index_sequence<ObjI::constructorCount>{},
-         make_index_sequence<ObjI::propertyCount>{});
+        }(make_index_sequence<ObjI::methodCount>{},
+          make_index_sequence<ObjI::constructorCount>{},
+          make_index_sequence<ObjI::propertyCount>{});
     }
 
     /// implementation of qt_metacast
@@ -880,8 +883,7 @@ struct FriendHelper {
                   ? (void)(result = static_cast<InterfacePtr<Is, T**>>(o))
                   : (void)0),
              ...);
-        }
-        (make_index_sequence<ObjectInfo<T>::interfaceCount>{});
+        }(make_index_sequence<ObjectInfo<T>::interfaceCount>{});
         if (!result) return o->T::W_BaseType::qt_metacast(_clname);
         return result;
     }

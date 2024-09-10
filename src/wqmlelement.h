@@ -14,19 +14,19 @@ struct QmlFriendHelper;
 #define W_QML_ELEMENT                                                                                                  \
     W_CLASSINFO("QML.Element", "auto");                                                                                \
     friend struct w_internal::QmlFriendHelper;                                                                         \
-    static auto w_qmlElementData()->const void*;                                                                       \
+    static auto w_qmlElementData() -> const void*;                                                                     \
     static constexpr auto W_Header = w_internal::viewLiteral(__FILE__)
 
 #define W_QML_ANONYMOUS                                                                                                \
     W_CLASSINFO("QML.Element", "anonymous");                                                                           \
     friend struct w_internal::QmlFriendHelper;                                                                         \
-    static auto w_qmlElementData()->const void*;                                                                       \
+    static auto w_qmlElementData() -> const void*;                                                                     \
     static constexpr auto W_Header = w_internal::viewLiteral(__FILE__)
 
 #define W_QML_NAMED_ELEMENT(NAME)                                                                                      \
     W_CLASSINFO("QML.Element", #NAME);                                                                                 \
     friend struct w_internal::QmlFriendHelper;                                                                         \
-    static auto w_qmlElementData()->const void*;                                                                       \
+    static auto w_qmlElementData() -> const void*;                                                                     \
     static constexpr auto W_Header = w_internal::viewLiteral(__FILE__)
 
 #define W_QML_UNCREATABLE(REASON)                                                                                      \
@@ -36,7 +36,7 @@ struct QmlFriendHelper;
 #define W_QML_VALUE_TYPE(NAME)                                                                                         \
     W_CLASSINFO("QML.Element", #NAME)                                                                                  \
     friend struct w_internal::QmlFriendHelper;                                                                         \
-    static auto w_qmlElementData()->const void*;                                                                       \
+    static auto w_qmlElementData() -> const void*;                                                                     \
     static constexpr auto W_Header = w_internal::viewLiteral(__FILE__);                                                \
     W_QML_UNCREATABLE("Value types cannot be created.")
 
@@ -273,8 +273,8 @@ template<typename T>
 concept is_qgadget = requires(T& gad) { gad.qt_check_for_QGADGET_macro(); };
 
 template<typename T>
-concept is_qobject = !
-is_qgadget<T>&& requires(T& obj, const char* name, void* result) { result = obj.T::qt_metacast(name); };
+concept is_qobject =
+    !is_qgadget<T> && requires(T& obj, const char* name, void* result) { result = obj.T::qt_metacast(name); };
 
 template<typename T>
 concept has_className = requires(StringView out) { out = T::W_UnscopedName; };
@@ -590,7 +590,8 @@ struct QmlFriendHelper {
 
 #define W_QML_ELEMENT_IMPL(...)                                                                                        \
     W_OBJECT_IMPL(__VA_ARGS__)                                                                                         \
-    W_MACRO_TEMPLATE_STUFF(__VA_ARGS__) auto W_MACRO_FIRST_REMOVEPAREN(__VA_ARGS__)::w_qmlElementData()->const void* { \
+    W_MACRO_TEMPLATE_STUFF(__VA_ARGS__)                                                                                \
+    auto W_MACRO_FIRST_REMOVEPAREN(__VA_ARGS__)::w_qmlElementData() -> const void* {                                   \
         return w_internal::QmlFriendHelper::qmlElementData<typename W_MACRO_FIRST_REMOVEPAREN(                         \
             __VA_ARGS__)::W_ThisType>();                                                                               \
     }

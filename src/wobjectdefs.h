@@ -776,9 +776,9 @@ namespace w_internal {
 /// All overloads are found using ADL in the QObject T
 template<size_t L, typename State, typename TPP, size_t N>
 concept HasState = requires {
-                       L >= 0;
-                       w_state(index<N>, State{}, TPP{});
-                   };
+    L >= 0;
+    w_state(index<N>, State{}, TPP{});
+};
 
 template<size_t L, typename State, typename TPP, size_t N, size_t M, size_t X = (N + M) / 2>
 consteval size_t stateCountBetween() {
@@ -830,15 +830,15 @@ public:                                                                         
 #define W_STATE_COUNT(STATE) w_internal::stateCount<__COUNTER__, w_internal::STATE##Tag, W_ThisType**>()
 
 #define W_STATE_STORE(STATE, COUNT, ...)                                                                               \
-    friend constexpr auto w_state(w_internal::Index<COUNT>, w_internal::STATE##Tag, W_ThisType**)                      \
-        ->decltype((__VA_ARGS__)) {                                                                                    \
+    friend constexpr auto w_state(                                                                                     \
+        w_internal::Index<COUNT>, w_internal::STATE##Tag, W_ThisType**) -> decltype((__VA_ARGS__)) {                   \
         return (__VA_ARGS__);                                                                                          \
     }                                                                                                                  \
     friend struct w_internal::FriendHelper
 
 #define W_STATE_STORE_NS(STATE, COUNT, ...)                                                                            \
-    static constexpr auto w_state(w_internal::Index<COUNT>, w_internal::STATE##Tag, W_ThisType**)                      \
-        ->decltype((__VA_ARGS__)) {                                                                                    \
+    static constexpr auto w_state(                                                                                     \
+        w_internal::Index<COUNT>, w_internal::STATE##Tag, W_ThisType**) -> decltype((__VA_ARGS__)) {                   \
         return (__VA_ARGS__);                                                                                          \
     }
 
@@ -902,8 +902,9 @@ public:                                                                         
 #define W_SLOT_N(...) W_MACRO_MSVC_EXPAND(W_SLOT2(__VA_ARGS__, w_internal::EmptyFlag{}))
 #define W_SLOT2(N, NAME, ...)                                                                                          \
     static constexpr int W_MACRO_CONCAT(w_slotIndex_##NAME, N) = W_STATE_COUNT(SlotState);                             \
-    static constexpr auto W_MACRO_CONCAT(w_slotFunc_##NAME, N)()                                                       \
-        ->std::remove_reference_t<decltype(W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME))> {                      \
+    static constexpr auto W_MACRO_CONCAT(                                                                              \
+        w_slotFunc_##NAME,                                                                                             \
+        N)() -> std::remove_reference_t<decltype(W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME))> {                \
         return W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME);                                                     \
     }                                                                                                                  \
     W_STATE_STORE(                                                                                                     \
@@ -922,8 +923,9 @@ public:                                                                         
 #define W_INVOKABLE_N(...) W_MACRO_MSVC_EXPAND(W_INVOKABLE2(__VA_ARGS__, w_internal::EmptyFlag{}))
 #define W_INVOKABLE2(N, NAME, ...)                                                                                     \
     static constexpr int W_MACRO_CONCAT(w_invokableIndex_##NAME, N) = W_STATE_COUNT(MethodState);                      \
-    static constexpr auto W_MACRO_CONCAT(w_invokableFunc_##NAME, N)()                                                  \
-        ->std::remove_reference_t<decltype(W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME))> {                      \
+    static constexpr auto W_MACRO_CONCAT(                                                                              \
+        w_invokableFunc_##NAME,                                                                                        \
+        N)() -> std::remove_reference_t<decltype(W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME))> {                \
         return W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME);                                                     \
     }                                                                                                                  \
     W_STATE_STORE(                                                                                                     \
@@ -958,8 +960,9 @@ public:                                                                         
             W_OVERLOAD_REMOVE(__VA_ARGS__));                                                                           \
     }                                                                                                                  \
     static constexpr int W_MACRO_CONCAT(w_signalIndex_##NAME, N) = W_STATE_COUNT(SignalState);                         \
-    static constexpr auto W_MACRO_CONCAT(w_signalFunc_##NAME, N)()                                                     \
-        ->std::remove_reference_t<decltype(W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME))> {                      \
+    static constexpr auto W_MACRO_CONCAT(                                                                              \
+        w_signalFunc_##NAME,                                                                                           \
+        N)() -> std::remove_reference_t<decltype(W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME))> {                \
         return W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME);                                                     \
     }                                                                                                                  \
     W_STATE_STORE(                                                                                                     \
@@ -983,8 +986,9 @@ public:                                                                         
             W_OVERLOAD_REMOVE(__VA_ARGS__));                                                                           \
     }                                                                                                                  \
     static constexpr int W_MACRO_CONCAT(w_signalIndex_##NAME, N) = W_STATE_COUNT(SignalState);                         \
-    static constexpr auto W_MACRO_CONCAT(w_signalFunc_##NAME, N)()                                                     \
-        ->std::remove_reference_t<decltype(W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME))> {                      \
+    static constexpr auto W_MACRO_CONCAT(                                                                              \
+        w_signalFunc_##NAME,                                                                                           \
+        N)() -> std::remove_reference_t<decltype(W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME))> {                \
         return W_OVERLOAD_RESOLVE(__VA_ARGS__)(&W_ThisType::NAME);                                                     \
     }                                                                                                                  \
     W_STATE_STORE(                                                                                                     \

@@ -14,8 +14,8 @@ struct MetaMethodInfoBuilder {
     ParamNames paramNames{};
 
     template<class... Args>
-    requires((std::is_same_v<std::decay_t<Args>, StringView> && ...)) //
-        constexpr auto setParamTypes(Args... newParamTypes) const
+        requires((std::is_same_v<std::decay_t<Args>, StringView> && ...)) //
+    constexpr auto setParamTypes(Args... newParamTypes) const
         -> MetaMethodInfoBuilder<F, w_internal::StringViewArray<sizeof...(Args)>, ParamNames> {
         return {
             .func = func,
@@ -26,8 +26,8 @@ struct MetaMethodInfoBuilder {
         };
     }
     template<class... Args>
-    requires((std::is_same_v<std::decay_t<Args>, StringView> && ...)) //
-        constexpr auto setParamNames(Args... newParamNames) const
+        requires((std::is_same_v<std::decay_t<Args>, StringView> && ...)) //
+    constexpr auto setParamNames(Args... newParamNames) const
         -> MetaMethodInfoBuilder<F, ParamTypes, w_internal::StringViewArray<sizeof...(Args)>> {
         return {
             .func = func,
@@ -205,7 +205,7 @@ constexpr auto makeFlagInfo(
     static constexpr size_t W_MACRO_CONCAT(a, _O) = W_STATE_COUNT(SignalState);                                        \
     template<size_t I> W_STATE_STORE(SignalState, I, (a<I - W_MACRO_CONCAT(a, _O)>::signal));                          \
     template<size_t I>                                                                                                 \
-    requires(I >= W_MACRO_CONCAT(a, _O)) && requires { a<I - W_MACRO_CONCAT(a, _O)>::signal; }                         \
+        requires(I >= W_MACRO_CONCAT(a, _O)) && requires { a<I - W_MACRO_CONCAT(a, _O)>::signal; }                     \
     W_ACCESS_HELPER(SignalState, I)
 
 /// \macro W_CPP_SIGNAL_IMPL(type, callback, index)
