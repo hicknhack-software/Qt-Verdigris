@@ -560,48 +560,7 @@ template<typename T> static consteval const QMetaObject* parentMetaObject() {
     }
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-// note: Qt 6.3 introduced a check here that allows only QObjects - but we need it for Gadgets as well
-template<typename, typename, typename, typename> struct FunctorCall;
-template<size_t... II, typename... Args, typename R, typename Function>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<Args...>, R, Function> {
-    static void call(Function f, void** arg) {
-        f((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...), QtPrivate::ApplyReturnValue<R>(arg[0]);
-    }
-};
-template<size_t... II, typename... Args, typename R, typename... SlotArgs, typename SlotRet, class Obj>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<Args...>, R, SlotRet (Obj::*)(SlotArgs...)> {
-    static void call(SlotRet (Obj::*f)(SlotArgs...), Obj* o, void** arg) {
-        (o->*f)((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...),
-            QtPrivate::ApplyReturnValue<R>(arg[0]);
-    }
-};
-template<size_t... II, typename... Args, typename R, typename... SlotArgs, typename SlotRet, class Obj>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<Args...>, R, SlotRet (Obj::*)(SlotArgs...) const> {
-    static void call(SlotRet (Obj::*f)(SlotArgs...) const, Obj* o, void** arg) {
-        (o->*f)((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...),
-            QtPrivate::ApplyReturnValue<R>(arg[0]);
-    }
-};
-template<size_t... II, typename... Args, typename R, typename... SlotArgs, typename SlotRet, class Obj>
-struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<Args...>, R, SlotRet (Obj::*)(SlotArgs...) noexcept> {
-    static void call(SlotRet (Obj::*f)(SlotArgs...) noexcept, Obj* o, void** arg) {
-        (o->*f)((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...),
-            QtPrivate::ApplyReturnValue<R>(arg[0]);
-    }
-};
-template<size_t... II, typename... Args, typename R, typename... SlotArgs, typename SlotRet, class Obj>
-struct FunctorCall<
-    std::index_sequence<II...>,
-    QtPrivate::List<Args...>,
-    R,
-    SlotRet (Obj::*)(SlotArgs...) const noexcept> {
-    static void call(SlotRet (Obj::*f)(SlotArgs...) const noexcept, Obj* o, void** arg) {
-        (o->*f)((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...),
-            QtPrivate::ApplyReturnValue<R>(arg[0]);
-    }
-};
-#elif QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 template<typename, typename, typename, typename> struct FunctorCall;
 template<size_t... II, typename... SignalArgs, typename R, typename Function>
 struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<SignalArgs...>, R, Function>
@@ -654,6 +613,47 @@ struct FunctorCall<
         call_internal<R>(arg, [&]() noexcept {
             return (o->*f)((*reinterpret_cast<typename RemoveRef<SignalArgs>::Type*>(arg[II + 1]))...);
         });
+    }
+};
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+// note: Qt 6.3 introduced a check here that allows only QObjects - but we need it for Gadgets as well
+template<typename, typename, typename, typename> struct FunctorCall;
+template<size_t... II, typename... Args, typename R, typename Function>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<Args...>, R, Function> {
+    static void call(Function f, void** arg) {
+        f((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...), QtPrivate::ApplyReturnValue<R>(arg[0]);
+    }
+};
+template<size_t... II, typename... Args, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<Args...>, R, SlotRet (Obj::*)(SlotArgs...)> {
+    static void call(SlotRet (Obj::*f)(SlotArgs...), Obj* o, void** arg) {
+        (o->*f)((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...),
+            QtPrivate::ApplyReturnValue<R>(arg[0]);
+    }
+};
+template<size_t... II, typename... Args, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<Args...>, R, SlotRet (Obj::*)(SlotArgs...) const> {
+    static void call(SlotRet (Obj::*f)(SlotArgs...) const, Obj* o, void** arg) {
+        (o->*f)((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...),
+            QtPrivate::ApplyReturnValue<R>(arg[0]);
+    }
+};
+template<size_t... II, typename... Args, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<std::index_sequence<II...>, QtPrivate::List<Args...>, R, SlotRet (Obj::*)(SlotArgs...) noexcept> {
+    static void call(SlotRet (Obj::*f)(SlotArgs...) noexcept, Obj* o, void** arg) {
+        (o->*f)((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...),
+            QtPrivate::ApplyReturnValue<R>(arg[0]);
+    }
+};
+template<size_t... II, typename... Args, typename R, typename... SlotArgs, typename SlotRet, class Obj>
+struct FunctorCall<
+    std::index_sequence<II...>,
+    QtPrivate::List<Args...>,
+    R,
+    SlotRet (Obj::*)(SlotArgs...) const noexcept> {
+    static void call(SlotRet (Obj::*f)(SlotArgs...) const noexcept, Obj* o, void** arg) {
+        (o->*f)((*reinterpret_cast<std::remove_reference_t<Args>*>(arg[II + 1]))...),
+            QtPrivate::ApplyReturnValue<R>(arg[0]);
     }
 };
 #endif
