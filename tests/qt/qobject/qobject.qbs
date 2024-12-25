@@ -12,7 +12,7 @@ Project {
         type: ["application", "autotest"]
 
         Depends { name: "cpp" }
-        cpp.defines: base.concat("QT_DISABLE_DEPRECATED_BEFORE=0", "QT_NO_DEBUG")
+        cpp.defines: base.concat("QT_DISABLE_DEPRECATED_BEFORE=0x040800", "QT_NO_DEBUG")
         Depends { name: "Verdigris" }
         Depends { name: "Qt.core" }
         Depends { name: "Qt.network" }

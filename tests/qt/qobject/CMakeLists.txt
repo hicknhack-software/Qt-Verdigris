@@ -12,7 +12,7 @@ target_link_libraries(qobject PRIVATE
   Qt6::Network
 )
 target_compile_definitions(qobject PRIVATE
-  QT_DISABLE_DEPRECATED_BEFORE=0
+  QT_DISABLE_DEPRECATED_BEFORE=0x40800
   QT_NO_DEBUG
   W_SIGNALBUG="$<TARGET_FILE:signalbug>"
 )
