@@ -2954,32 +2954,58 @@ void tst_QMetaObject::enumDebugStream_data()
     QTest::newRow("verbosity=1") << 1
         << "hello MyEnum::MyEnum2 world"
         << "hello MyScopedEnum::Enum3 scoped world"
+#if QT_VERSION < QT_VERSION_CHECK(6,9,0)
         << "WindowType::WindowTitleHint WindowType::Window WindowType::Desktop WindowType::WindowSystemMenuHint"
+#else
+        << "WindowType(WindowTitleHint) WindowType(Window) WindowType(Desktop) WindowType(WindowSystemMenuHint)"
+#endif
         << "hello MyFlag(MyFlag1) world"
         << "MyFlag(MyFlag1) MyFlag(MyFlag2|MyFlag3)"
         << "MyScopedFlag(MyFlag2)"
         << "MyScopedFlag(MyFlag2|MyFlag3)"
+#if QT_VERSION < QT_VERSION_CHECK(6,9,0)
         << "MyFlag::MyFlag1";
+#else
+        << "MyFlag(MyFlag1)";
+#endif
 
     QTest::newRow("verbosity=2") << 2
         << "hello MyNamespace::MyClass::MyEnum2 world"
         << "hello MyNamespace::MyClass::MyScopedEnum::Enum3 scoped world"
+#if QT_VERSION < QT_VERSION_CHECK(6,9,0)
         << "Qt::WindowTitleHint Qt::Window Qt::Desktop Qt::WindowSystemMenuHint"
+#else
+        << "QFlags<Qt::WindowType>(WindowTitleHint) QFlags<Qt::WindowType>(Window) "
+           "QFlags<Qt::WindowType>(Desktop) QFlags<Qt::WindowType>(WindowSystemMenuHint)"
+#endif
         << "hello QFlags<MyNamespace::MyClass::MyFlag>(MyFlag1) world"
         << "QFlags<MyNamespace::MyClass::MyFlag>(MyFlag1) QFlags<MyNamespace::MyClass::MyFlag>(MyFlag2|MyFlag3)"
         << "QFlags<MyNamespace::MyClass::MyScopedFlag>(MyFlag2)"
         << "QFlags<MyNamespace::MyClass::MyScopedFlag>(MyFlag2|MyFlag3)"
+#if QT_VERSION < QT_VERSION_CHECK(6,9,0)
         << "MyNamespace::MyClass::MyFlag1";
+#else
+        << "QFlags<MyNamespace::MyClass::MyFlag>(MyFlag1)";
+#endif
 
     QTest::newRow("verbosity=3") << 3
         << "hello MyNamespace::MyClass::MyEnum::MyEnum2 world"
         << "hello MyNamespace::MyClass::MyScopedEnum::Enum3 scoped world"
+#if QT_VERSION < QT_VERSION_CHECK(6,9,0)
         << "Qt::WindowType::WindowTitleHint Qt::WindowType::Window Qt::WindowType::Desktop Qt::WindowType::WindowSystemMenuHint"
+#else
+        << "QFlags<Qt::WindowType>(WindowTitleHint) QFlags<Qt::WindowType>(Window) "
+           "QFlags<Qt::WindowType>(Desktop) QFlags<Qt::WindowType>(WindowSystemMenuHint)"
+#endif
         << "hello QFlags<MyNamespace::MyClass::MyFlag>(MyFlag1) world"
         << "QFlags<MyNamespace::MyClass::MyFlag>(MyFlag1) QFlags<MyNamespace::MyClass::MyFlag>(MyFlag2|MyFlag3)"
         << "QFlags<MyNamespace::MyClass::MyScopedFlag>(MyFlag2)"
         << "QFlags<MyNamespace::MyClass::MyScopedFlag>(MyFlag2|MyFlag3)"
+#if QT_VERSION < QT_VERSION_CHECK(6,9,0)
         << "MyNamespace::MyClass::MyFlag::MyFlag1";
+#else
+        << "QFlags<MyNamespace::MyClass::MyFlag>(MyFlag1)";
+#endif
 }
 
 void tst_QMetaObject::enumDebugStream()

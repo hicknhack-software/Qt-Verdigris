@@ -222,6 +222,14 @@ template<class State, class T> struct PropertyMetaTypeGenerator {
     }
 };
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+template<class State, class T> struct EnumMetaTypeGenerator {
+    State& s;
+
+    template<class Enum> constexpr void operator()(const Enum&) { s.template addMetaType<typename Enum::Type>(); }
+};
+#endif
+
 template<class State> struct EnumGenerator {
     State& s;
     int dataIndex{};
@@ -235,7 +243,7 @@ template<class State> struct EnumGenerator {
         else
             s.addInts(nameIndex);
         s.addInts(Enum::flags, (uint)Enum::count, dataIndex);
-        dataIndex += Enum::count * 2;
+        dataIndex += Enum::count * ((Enum::flags & 0x40) != 0 ? 3 : 2);
     }
 };
 
@@ -250,6 +258,11 @@ private:
     template<class Enum, Enum... Values, typename Names, size_t... Is>
     constexpr void generateAll(enum_sequence<Enum, Values...>, const Names& names, const index_sequence<Is...>&) {
         ((s.addString(names[Is]), s.addInts(static_cast<uint>(Values))), ...);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+        if constexpr (sizeof(Enum) > sizeof(uint)) {
+            ((s.addInts(static_cast<uint>(qToUnderlying(Values) >> 32))), ...);
+        }
+#endif
     }
 };
 
@@ -354,7 +367,7 @@ struct LayoutBuilder {
 };
 
 template<class T>
-concept IsCompleteType = sizeof(T) >= 0;
+concept IsCompleteType = std::is_void_v<T> || sizeof(T) >= 0;
 
 struct OffsetLenPair {
     uint offset{};
@@ -414,7 +427,12 @@ template<class MetaData, size_t initStringOffset> struct DataBuilder {
     template<class T, bool forceComplete = false> constexpr void addMetaType() {
         // mirrors behaviour of QtPrivate::qTryMetaTypeInterfaceForType (qmetatype.h)
         // - but uses C++20 to be faster
-        if constexpr (forceComplete || IsCompleteType<QtPrivate::qRemovePointerLike_t<std::remove_cvref_t<T>>>) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+        using Tz = typename QtPrivate::QRemovePointerLike<std::remove_cvref_t<T>>::type;
+#else
+        using Tz = QtPrivate::qRemovePointerLike_t<std::remove_cvref_t<T>>;
+#endif
+        if constexpr (forceComplete || IsCompleteType<Tz>) {
             *metaTypeP++ = &QtPrivate::QMetaTypeInterfaceWrapper<std::remove_cvref_t<T>>::metaType;
         }
         else {
@@ -445,7 +463,18 @@ template<class T, class Result, class Builder> consteval auto generateDataPass()
     constexpr int constructorParamIndex = paramIndex + methodsParamOffset<L, T>();
     constexpr int enumValueOffset = constructorParamIndex + constructorParamOffset<L, T>();
 
-    builder.addInts(QT_VERSION >= QT_VERSION_CHECK(6, 2, 0) ? 10 : 9); // revision
+    // revision
+#if QT_VERSION < QT_VERSION_CHECK(6, 2, 0)
+    builder.addInts(9); // first Qt6
+#elif QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+    builder.addInts(10); // metatype for metaobject + const metamethods
+#elif QT_VERSION < QT_VERSION_CHECK(6, 6, 0)
+    builder.addInts(11); // metatype for void
+#elif QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+    builder.addInts(12); // metatype for enums
+#else
+    builder.addInts(13); // 64bit enum support
+#endif
     using TP = T*;
     if constexpr (HasExplicitName<TP>) {
         builder.addString(w_explicitObjectName(TP{}));
@@ -498,7 +527,9 @@ template<class T, class Result, class Builder> consteval auto generateDataPass()
     // if (state.intCount != classInfoOffset) throw "offset mismatch!";
     fold(ClassInfoStateTag{}, ClassInfoGenerator<Builder>{builder});
     fold(PropertyStateTag{}, PropertyMetaTypeGenerator<Builder, T>{builder});
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+    fold(EnumStateTag{}, EnumMetaTypeGenerator<Builder, T>{builder});
+#endif
 #if QT_VERSION >= QT_VERSION_CHECK(6, 2, 0)
     builder.template addMetaType<T, true>();
 #endif

@@ -582,7 +582,12 @@ constexpr auto makeMetaPropertyInfo(StringView name, StringView type, StringView
 }
 
 template<typename T, typename = void> struct EnumIsScoped {
-    enum { Value = std::is_convertible<T, int>::value ? 0 : 2 };
+    enum {
+        Value = (std::is_convertible<T, int>::value ? 0 : 2)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+            | (sizeof(T) > sizeof(uint) ? 0x40 : 0)
+#endif
+    };
 };
 template<typename T> struct EnumIsScoped<QFlags<T>, void> : EnumIsScoped<typename QFlags<T>::enum_type> {};
 
@@ -592,26 +597,38 @@ template<typename T> auto extractFlagEnum(QFlags<T>*) -> T;
 template<typename T> using ExtractFlagEnum = decltype(extractFlagEnum(EnumPtr<T>{}));
 
 /// Holds information about an enum
-template<bool HasAlias, size_t Count_, typename Values_, typename Names, int Flags> struct MetaEnumInfo {
+template<typename T, bool HasAlias, size_t Count_, typename Values_, typename Names, int Flags> struct MetaEnumInfo {
     StringView name;
     StringView alias;
     Names names;
+    using Type = T; // type of Flags or Enum
     using Values = Values_;
     static constexpr uint flags = Flags;
     static constexpr auto count = Count_;
-
     static constexpr auto hasAlias = HasAlias;
 };
 template<typename Enum, Enum... Value> struct enum_sequence {};
 // called from W_ENUM and W_FLAG
-template<typename Enum, int Flag, Enum... Values, typename Names>
+template<typename T, int Flag, typename Enum, Enum... Values, typename Names>
 constexpr auto makeMetaEnumInfo(StringView name, int, enum_sequence<Enum, Values...>, Names names)
-    -> MetaEnumInfo<false, sizeof...(Values), enum_sequence<Enum, Values...>, Names, Flag | EnumIsScoped<Enum>::Value> {
+    -> MetaEnumInfo<
+        T,
+        false,
+        sizeof...(Values),
+        enum_sequence<Enum, Values...>,
+        Names,
+        Flag | EnumIsScoped<Enum>::Value> {
     return {name, viewLiteral(""), names};
 }
-template<typename Enum, int Flag, Enum... Values, typename Names>
+template<typename T, int Flag, typename Enum, Enum... Values, typename Names>
 constexpr auto makeMetaEnumInfo(StringView name, StringView alias, enum_sequence<Enum, Values...>, Names names)
-    -> MetaEnumInfo<true, sizeof...(Values), enum_sequence<Enum, Values...>, Names, Flag | EnumIsScoped<Enum>::Value> {
+    -> MetaEnumInfo<
+        T,
+        true,
+        sizeof...(Values),
+        enum_sequence<Enum, Values...>,
+        Names,
+        Flag | EnumIsScoped<Enum>::Value> {
     return {name, alias, names};
 }
 
@@ -1069,7 +1086,7 @@ public:                                                                         
     Q_ENUM(NAME)                                                                                                       \
     W_STATE_APPEND(                                                                                                    \
         EnumState,                                                                                                     \
-        w_internal::makeMetaEnumInfo<NAME, false>(                                                                     \
+        w_internal::makeMetaEnumInfo<NAME, 0>(                                                                         \
             w_internal::viewLiteral(#NAME),                                                                            \
             w_flagAlias(w_internal::EnumPtr<NAME>{}),                                                                  \
             w_internal::enum_sequence<NAME, __VA_ARGS__>{},                                                            \
@@ -1081,7 +1098,7 @@ public:                                                                         
     Q_ENUM_NS(NAME)                                                                                                    \
     W_STATE_APPEND_NS(                                                                                                 \
         EnumState,                                                                                                     \
-        w_internal::makeMetaEnumInfo<NAME, false>(                                                                     \
+        w_internal::makeMetaEnumInfo<NAME, 0>(                                                                         \
             w_internal::viewLiteral(#NAME),                                                                            \
             w_flagAlias(w_internal::EnumPtr<NAME>{}),                                                                  \
             w_internal::enum_sequence<NAME, __VA_ARGS__>{},                                                            \
@@ -1093,7 +1110,7 @@ public:                                                                         
     Q_FLAG(NAME)                                                                                                       \
     W_STATE_APPEND(                                                                                                    \
         EnumState,                                                                                                     \
-        w_internal::makeMetaEnumInfo<w_internal::ExtractFlagEnum<NAME>, true>(                                         \
+        w_internal::makeMetaEnumInfo<NAME, 1>(                                                                         \
             w_internal::viewLiteral(#NAME),                                                                            \
             w_flagAlias(w_internal::EnumPtr<NAME>{}),                                                                  \
             w_internal::enum_sequence<w_internal::ExtractFlagEnum<NAME>, __VA_ARGS__>{},                               \
@@ -1105,7 +1122,7 @@ public:                                                                         
     Q_FLAG_NS(NAME)                                                                                                    \
     W_STATE_APPEND_NS(                                                                                                 \
         EnumState,                                                                                                     \
-        w_internal::makeMetaEnumInfo<w_internal::ExtractFlagEnum<NAME>, true>(                                         \
+        w_internal::makeMetaEnumInfo<NAME, 1>(                                                                         \
             w_internal::viewLiteral(#NAME),                                                                            \
             w_flagAlias(w_internal::EnumPtr<NAME>{}),                                                                  \
             w_internal::enum_sequence<w_internal::ExtractFlagEnum<NAME>, __VA_ARGS__>{},                               \
