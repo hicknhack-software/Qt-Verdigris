@@ -1,9 +1,9 @@
 import qbs
 
-
 Application {
     id: root
     name: "signalbug"
+    type: ["application", "autotest-required"]
     consoleApplication: true
 
     Depends { name: "Verdigris" }

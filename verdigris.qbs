@@ -14,7 +14,9 @@ Project {
     ]
     qbsSearchPaths: "qbs/"
 
-    AutotestRunner {}
+    AutotestRunner {
+        auxiliaryInputs: ["autotest-required"]
+    }
 
     Product {
         name: "Verdigris"
@@ -36,7 +38,9 @@ Project {
             Depends { name: "cpp" }
             Depends { name: "Qt.core" }
             cpp.cxxLanguageVersion: "c++20"
-            cpp.includePaths: ['src']
+            cpp.includePaths: [
+                exportingProduct.sourceDirectory + '/src'
+            ]
 
             Properties {
                 condition: qbs.toolchain.contains('msvc')
