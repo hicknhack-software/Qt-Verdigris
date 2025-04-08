@@ -6,3 +6,4 @@ target_link_libraries(qmetaenum PRIVATE
   verdigris
   Qt6::Test
 )
+add_test(NAME qmetaenum COMMAND qmetaenum)

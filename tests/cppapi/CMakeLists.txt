@@ -6,3 +6,4 @@ target_link_libraries(cppapi PRIVATE
   verdigris
   Qt6::Test
 )
+add_test(NAME cppapi COMMAND cppapi)

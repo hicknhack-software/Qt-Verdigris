@@ -16,3 +16,4 @@ target_compile_definitions(qobject PRIVATE
   QT_NO_DEBUG
   W_SIGNALBUG="$<TARGET_FILE:signalbug>"
 )
+add_test(NAME qobject COMMAND qobject)

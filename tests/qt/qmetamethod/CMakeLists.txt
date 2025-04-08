@@ -6,3 +6,4 @@ target_link_libraries(qmetamethod PRIVATE
   verdigris
   Qt6::Test
 )
+add_test(NAME qmetamethod COMMAND qmetamethod)

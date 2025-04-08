@@ -7,3 +7,4 @@ target_link_libraries(qproperty PRIVATE
   Qt6::CorePrivate
   Qt6::Test
 )
+add_test(NAME qproperty COMMAND qproperty)

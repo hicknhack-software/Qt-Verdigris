@@ -6,3 +6,4 @@ target_link_libraries(templates PRIVATE
   verdigris
   Qt6::Test
 )
+add_test(NAME templates COMMAND templates)

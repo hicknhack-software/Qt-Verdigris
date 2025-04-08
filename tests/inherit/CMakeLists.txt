@@ -10,3 +10,4 @@ target_link_libraries(inherit PRIVATE
   verdigris
   Qt6::Test
 )
+add_test(NAME inherit COMMAND inherit)

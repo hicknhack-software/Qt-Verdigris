@@ -104,3 +104,58 @@ jobs:
       - run: qmake -r
       - run: nmake
       - run: nmake check
+
+  windows-cmake:
+    name: "${{ matrix.host_system }} CMake Qt ${{ matrix.qt_version }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - host_system: windows-2022
+            qt_version: "6.9.0"
+            qt_arch: win64_msvc2022_64
+            preset: "msvc"
+
+    runs-on: "${{ matrix.host_system }}"
+    steps:
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "${{ matrix.qt_version }}"
+          arch: "${{ matrix.qt_arch }}"
+          cache: true
+
+      - name: Setup CMake & Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Install Tools Ninja and mvsc
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare Build
+        run: cmake -S . --preset "${{ matrix.preset }}"
+
+      - name: Build Debug
+        run: cmake --build --preset "${{ matrix.preset }}-debug"
+
+      - name: Build Release
+        run: cmake --build --preset "${{ matrix.preset }}-release"
+
+      - name: Test Debug
+        run: ctest --preset "test-${{ matrix.preset }}-debug" --output-junit "${{ github.workspace }}\reports\debug.xml"
+
+      - name: Test Release
+        run: ctest --preset "test-${{ matrix.preset }}-release" --output-junit "${{ github.workspace }}\reports\release.xml"
+
+      - name: Check
+        run: dir "reports"
+
+      - name: Test Report
+        uses: dorny/test-reporter@v2
+        if: success() || failure()
+        with:
+          name: ${{ matrix.host_system }} ${{ matrix.preset }} Tests
+          path: reports/*.xml
+          reporter: java-junit

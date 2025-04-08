@@ -6,3 +6,4 @@ target_link_libraries(internal PRIVATE
   verdigris
   Qt6::Test
 )
+add_test(NAME internal COMMAND internal)

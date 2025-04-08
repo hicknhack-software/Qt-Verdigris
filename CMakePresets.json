@@ -1,28 +1,40 @@
 {
   "version": 3,
+  "cmakeMinimumRequired": {
+      "major": 3,
+      "minor": 25,
+      "patch": 0
+  },
   "configurePresets": [
     {
       "name": "base",
       "hidden": true,
       "description": "Base for concrete configure presets",
       "generator": "Ninja Multi-Config",
-      "binaryDir": "${sourceDir}/build/${presetName}"
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+      }
     },
     {
       "name": "msvc",
+      "inherits": "base",
       "description": "Preferred settings for MSVC 2022",
+      "installDir": "${sourceDir}/artifacts/msvc",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc /permissive- /Zc:__cplusplus /Zc:externConstexpr /Zc:inline /Zc:preprocessor /Zc:throwingNew /diagnostics:caret"
       }
     },
     {
       "name": "clang",
+      "inherits": "base",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "--pedantic -Wall -Wextra -ftemplate-backtrace-limit=0 -Wno-gnu-zero-variadic-macro-arguments"
       }
     },
     {
       "name": "clang-libcpp",
+      "inherits": "base",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "--stdlib=libc++ --pedantic -Wall -Wextra -ftemplate-backtrace-limit=0 -Wno-gnu-zero-variadic-macro-arguments",
         "CMAKE_EXE_LINKER_FLAGS": "--stdlib=libc++"
@@ -30,9 +42,52 @@
     },
     {
       "name": "gcc",
+      "inherits": "base",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "--pedantic -Wall -Wextra -Wno-noexcept-type -Wno-address -ftemplate-backtrace-limit=0"
       }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "msvc-debug",
+      "displayName": "Visual Studio 2022 Debug Build",
+      "configurePreset": "msvc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "msvc-release",
+      "displayName": "Visual Studio 2022 Release Build",
+      "configurePreset": "msvc",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-base",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true,
+        "debug": false
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "test-msvc-debug",
+      "inherits": "test-base",
+      "displayName": "Test Visual Studio 2022 Debug Build",
+      "configurePreset": "msvc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "test-msvc-release",
+      "inherits": "test-base",
+      "displayName": "Test Visual Studio 2022 Release Build",
+      "configurePreset": "msvc",
+      "configuration": "Release"
     }
   ]
 }
