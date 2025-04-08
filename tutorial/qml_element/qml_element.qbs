@@ -6,7 +6,7 @@
 // * There is no known way to restrict rules to certain inputs
 
 // As a workaround we use two products:
-// 1st Product with output type `obj`
+// 1st Product with output type `obj.exported`
 //     - add sources with QML_ELEMENTS here
 //     - `cpp` -[compile]-> `obj` -[extractor]-> `verdigris.metatypes`
 // 2nd Library/Application

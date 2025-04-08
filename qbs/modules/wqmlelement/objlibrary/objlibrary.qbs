@@ -1,6 +1,6 @@
 
 Module {
-    additionalProductTypes: ["obj", "verdigris.metatypes"]
+    additionalProductTypes: ["obj.exported", "verdigris.metatypes"]
 
     Depends { productTypes: ["metatypes-extractor"] }
     Depends { name: "Qt.core" }
