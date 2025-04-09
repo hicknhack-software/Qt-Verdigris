@@ -3,10 +3,8 @@ import qbs
 Application {
     name: "qmetamethod"
     consoleApplication: true
-    type: ["application", "autotest"]
 
-    Depends { name: "Verdigris" }
-    Depends { name: "Qt.test" }
+    Depends { name: "VerdigrisTest" }
 
     files: [
         "tst_qmetamethod6.cpp",

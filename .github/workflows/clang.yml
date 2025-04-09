@@ -40,9 +40,8 @@ jobs:
           - image: arbmind/qbs-clang-libstdcpp-qt:2.6.0-20-14-6.9.0
           - image: arbmind/qbs-clang-libstdcpp-qt:2.5.0-19-14-6.8.1
           - image: arbmind/qbs-clang-libstdcpp-qt:2.3.1-18-14-6.7.1
-          - image: arbmind/qbs-clang-libstdcpp-qt:1.24.1-16-12-6.5.0
-          - image: arbmind/qbs-clang-libstdcpp-qt:1.22.0-14-11-6.3.0
-          - image: arbmind/qbs-clang-libstdcpp-qt:1.21.0-13-10-6.2.4
+          - image: arbmind/qbs-clang-libstdcpp-qt:2.2.2-16-12-6.5.3
+          - image: arbmind/qbs-clang-libstdcpp-qt:2.1.1-14-11-6.4.3
 
     runs-on: ubuntu-latest
     steps:
@@ -51,12 +50,22 @@ jobs:
 
       - name: Build & Test
         run: >-
+          mkdir reports;
           docker run --rm -v ${GITHUB_WORKSPACE}:/build -w /build
           ${{ matrix.image }}
           build
           --file /build/verdigris.qbs
           --build-directory /tmp/build
           -p autotest-runner
+          project.junit_output:true
+
+      - name: Test Report
+        uses: dorny/test-reporter@v2
+        if: success() || failure()
+        with:
+          name: ${{ matrix.image }} Tests
+          path: reports/*.xml
+          reporter: java-junit
 
   linux-qmake:
     name: "${{ matrix.host_system }} QMake Clang ${{ matrix.clang_version }} Qt ${{ matrix.qt_version }} ${{ matrix.std_cpp }}"

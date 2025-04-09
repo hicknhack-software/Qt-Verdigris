@@ -12,8 +12,7 @@ jobs:
           - image: arbmind/qbs-gcc-qt:2.6.0-14-6.9.0
           - image: arbmind/qbs-gcc-qt:2.5.0-14-6.8.1
           - image: arbmind/qbs-gcc-qt:2.3.1-14-6.7.1
-          - image: arbmind/qbs-gcc-qt:1.24.1-12-6.5.0
-          - image: arbmind/qbs-gcc-qt:1.22.1-12-6.3.1
+          - image: arbmind/qbs-gcc-qt:2.3.1-12-6.5.3
 
     runs-on: ubuntu-latest
     steps:
@@ -22,12 +21,22 @@ jobs:
 
       - name: Build & Test
         run: >-
+          mkdir reports;
           docker run --rm -v ${GITHUB_WORKSPACE}:/build -w /build
           ${{ matrix.image }}
           build
           --file /build/verdigris.qbs
           --build-directory /tmp/build
           -p autotest-runner
+          project.junit_output:true
+
+      - name: Test Report
+        uses: dorny/test-reporter@v2
+        if: success() || failure()
+        with:
+          name: ${{ matrix.image }} Tests
+          path: reports/*.xml
+          reporter: java-junit
 
   linux-qmake:
     name: "${{ matrix.host_system }} QMake Gcc ${{ matrix.gcc_version }} Qt ${{ matrix.qt_version }} ${{ matrix.std_cpp }}"

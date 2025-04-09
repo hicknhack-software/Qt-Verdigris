@@ -3,10 +3,8 @@ import qbs
 Application {
     name: "inherit"
     consoleApplication: true
-    type: ["application", "autotest"]
 
-    Depends { name: "Verdigris" }
-    Depends { name: "Qt.test" }
+    Depends { name: "VerdigrisTest" }
 
     files: [
         "api1.h",

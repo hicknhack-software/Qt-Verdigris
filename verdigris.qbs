@@ -5,6 +5,7 @@ Project {
 
     // use `qbs build project.objlibrary_support:true` if qbs is patched (needed for W_QML_ELEMENT support)
     property bool objlibrary_support: false
+    property bool junit_output: false
 
     references: [
         "tutorial",

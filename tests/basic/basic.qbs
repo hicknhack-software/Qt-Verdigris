@@ -3,10 +3,8 @@ import qbs
 Application {
     name: "basic"
     consoleApplication: true
-    type: ["application", "autotest"]
 
-    Depends { name: "Verdigris" }
-    Depends { name: "Qt.test" }
+    Depends { name: "VerdigrisTest" }
 
     Group {
         name: "source"

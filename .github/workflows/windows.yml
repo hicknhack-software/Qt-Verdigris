@@ -62,11 +62,22 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v4
 
-      - run: >-
+      - name: Build Autotest-Runner
+        run: >-
+          mkdir reports;
           qbs build
           --file verdigris.qbs
           --build-directory ${env:RUNNER_TEMP}\build
           -p autotest-runner
+          project.junit_output:true
+
+      - name: Test Report
+        uses: dorny/test-reporter@v2
+        if: success() || failure()
+        with:
+          name: ${{ matrix.host_system }} ${{ matrix.qt_version }} Tests
+          path: reports/*.xml
+          reporter: java-junit
 
   windows-qmake:
     name: "${{ matrix.host_system }} QMake Qt ${{ matrix.qt_version }} ${{ matrix.qt_arch }}"
@@ -148,9 +159,6 @@ jobs:
 
       - name: Test Release
         run: ctest --preset "test-${{ matrix.preset }}-release" --output-junit "${{ github.workspace }}\reports\release.xml"
-
-      - name: Check
-        run: dir "reports"
 
       - name: Test Report
         uses: dorny/test-reporter@v2

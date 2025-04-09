@@ -9,14 +9,12 @@ Project {
     Application {
         name: "qobject"
         consoleApplication: true
-        type: ["application", "autotest"]
 
         Depends { name: "cpp" }
         cpp.defines: base.concat("QT_DISABLE_DEPRECATED_BEFORE=0x040800", "QT_NO_DEBUG")
-        Depends { name: "Verdigris" }
+        Depends { name: "VerdigrisTest" }
         Depends { name: "Qt.core" }
         Depends { name: "Qt.network" }
-        Depends { name: "Qt.test" }
         Depends {
             name: "Qt.testlib-private"
             condition: Utilities.versionCompare(Qt.core.version, "6.2") >= 0
